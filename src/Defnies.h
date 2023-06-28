@@ -19,8 +19,9 @@ enum Status
 #include <Wire.h>
 #include <SPI.h>
 #include <PubSubClient.h>
-#include <WiFi.h>
+#include <Esp8266WiFi.h>
 #include <ArduinoJson.h>
+#include <TZ.h>
 
 // STD LIBS
 #include <stdio.h>

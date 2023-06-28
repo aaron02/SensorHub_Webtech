@@ -25,14 +25,22 @@ public:
 
     static void callback(char* topic, byte* payload, unsigned int length);
 
+    std::string getClientId();
+
+private:
+    // Helper functions
+    float precision( float f, int places ) { float n = std::pow(10.0f, places ); return std::round(f * n) / n ; }
+
+    bool timeDone = false;
+
 protected:
     // Timer
     int32_t timer = 1 * TimeVar::Seconds;
 
     // Wifi Settings
-    const char* ssid = "";
-    const char* pass = "";
-    const char* mqtt_serv = "";
+    const char* ssid = "AndroidAP3853";
+    const char* pass = "1234567890";
+    const char* mqtt_serv = "188.172.228.39";
 
     std::string clientId = "unk";
     const char* acceptTopic = "client/accepted";

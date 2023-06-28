@@ -13,7 +13,7 @@ void MainThread(uint32_t difftime)
     CALL_UPDATE(mWifi, Update(difftime));
 
     // Test Timer 1 second
-    if (1)
+    if (0)
     {
         if (timer < 0)
         {

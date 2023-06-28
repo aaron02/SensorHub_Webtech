@@ -7,6 +7,20 @@ Copyright (c) 2023-2023 Webtech Projekt
 WiFiClient wifiClient;
 PubSubClient client(wifiClient);
 
+// Timer Functions
+std::chrono::high_resolution_clock::time_point timeNow()
+{
+    return std::chrono::high_resolution_clock::now();
+}
+
+time_t getTimeNow()
+{
+    const auto now_c = std::chrono::system_clock::now();
+    const auto now = std::chrono::system_clock::to_time_t(now_c);
+
+    return now;
+}
+
 //Display Init
 rgb_lcd lcd;
 
@@ -64,6 +78,9 @@ WifiManager::WifiManager()
     lcd.begin(16, 2);
     lcd.setRGB(colorR, colorG, colorB);
     lcd.print("LCD Initialized");
+
+    // Time Config
+    configTime(TZ_Europe_Berlin, "pool.ntp.org");
 }
 
 WifiManager::~WifiManager()
@@ -75,61 +92,87 @@ void WifiManager::Update(uint64_t difftime)
 {
     if (timer <= 0)
     {
-        timer = 1 * TimeVar::Seconds;
-
         // Connection Dropped
         if (!client.connected())
         {
             // Reconnect to our MQTT Broker
             reconnect();
-        }
-        else
-        {
-            // Send our Sensor Data to our MQTT Broker
-            float temperature = bme280.getTemperature();
-            float pressure = bme280.getPressure();
-            float altitude = bme280.calcAltitude(pressure);
-            float humidity = bme280.getHumidity();
-            long lux = TSL2561.readVisibleLux();
-            long sound = analogRead(PHOTOCELL_PIN);
-
-            // Construct Json
-            StaticJsonDocument<80> doc;
-            char output[80];
-
-            doc["temp"] = temperature;
-            doc["pres"] = pressure;
-            doc["alt"] = altitude;
-            doc["hum"] = humidity;
-            doc["lux"] = lux;
-            doc["soun"] = sound;
-
-            // Serialise
-            serializeJson(doc, output);
-            client.publish("data/sensors", output);
+            timer = 1 * TimeVar::Seconds;
         }
     }
     else
         timer -= difftime;
 
+    // All Full 30 Seconds send a Value To our Server
+    // Example when its 13:12:43 at startup the node will send
+    // the first Message at 13:13:00 and continues all 30 sec.
+    if ((getTimeNow() % 30) == 0 && !timeDone)
+    {
+        timeDone = true;
+        // Send our Sensor Data to our MQTT Broker
+        float temperature = precision(bme280.getTemperature(), 2);
+        uint32_t pressure = bme280.getPressure();
+        float altitude = precision(bme280.calcAltitude(pressure), 2);
+        uint32_t humidity = bme280.getHumidity();
+        long lux = precision(TSL2561.readVisibleLux(), 2);
+        uint16_t sound = analogRead(PHOTOCELL_PIN);
+
+        // Construct Json
+        StaticJsonDocument<100> doc;
+        char output[100];
+
+        doc["temp"] = temperature;
+        doc["pres"] = pressure;
+        doc["alt"] = altitude;
+        doc["hum"] = humidity;
+        doc["lux"] = lux;
+        doc["soun"] = sound;
+
+        // Serialise
+        serializeJson(doc, output);
+
+        std::stringstream topic;
+        topic << "Nodes/";
+        topic << getClientId();
+        topic << "/Data";
+        topic << output;
+
+        sLogger.info(topic.str().c_str());
+        client.publish(topic.str().c_str(), output);
+    }
+    else if ((getTimeNow() % 30) != 0)
+        timeDone = false;
+
     client.loop();
 }
+
+std::string WifiManager::getClientId()
+{
+    // Get the wifi MAC-Address and convert it to a string
+    std::string macAddress = WiFi.macAddress().c_str();
+
+    // Convert the MAC-Address to lower case
+    std::transform(macAddress.begin(), macAddress.end(), macAddress.begin(), ::tolower);
+
+    // Remove the colons from the MAC-Address
+    macAddress.erase(std::remove(macAddress.begin(), macAddress.end(), ':'), macAddress.end());
+
+    // Return the formatted ClientId
+    return macAddress;
+}
+
 
 void WifiManager::reconnect()
 {
     sLogger.debug("MQTT not connected... Trying to connect");
 
-    // ClientId
-    clientId = "Node-";
-    clientId += WiFi.macAddress().c_str();
-
     // Print our Node Id on the LCD
-    lcd.print(clientId.c_str());
+    lcd.print(getClientId().c_str());
 
     // Attempt an Connection
     // Login als Clients User um nur Berechtigte Clients anmelden zu können
     // Wenn der Login Erfolgreich war wird in der Datenbank die ClientId angelegt
-    if (client.connect(clientId.c_str(), "clients", "zbw"))
+    if (client.connect(getClientId().c_str(), "clients", "zbw"))
     {
         sLogger.debug("Connected to MQTT Broker");
         client.subscribe(acceptTopic);
