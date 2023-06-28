@@ -136,7 +136,7 @@ void WifiManager::Update(uint64_t difftime)
         topic << getClientId();
         topic << "/Data";
 
-        sLogger.debug(output);
+        sLogger.debug("%s %s", topic.str().c_str(), output);
         client.publish(topic.str().c_str(), output);
     }
     else if ((getTimeNow() % 30) != 0)
@@ -185,7 +185,7 @@ void WifiManager::reconnect()
         // Serialise
         serializeJson(doc, output);
 
-        sLogger.debug(output);
+        sLogger.debug("%s %s", acceptTopic, output);
         client.publish(acceptTopic, output);
     }
     else
