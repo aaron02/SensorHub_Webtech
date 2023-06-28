@@ -135,9 +135,8 @@ void WifiManager::Update(uint64_t difftime)
         topic << "Nodes/";
         topic << getClientId();
         topic << "/Data";
-        topic << output;
 
-        sLogger.info(topic.str().c_str());
+        sLogger.debug(output);
         client.publish(topic.str().c_str(), output);
     }
     else if ((getTimeNow() % 30) != 0)
@@ -176,6 +175,18 @@ void WifiManager::reconnect()
     {
         sLogger.debug("Connected to MQTT Broker");
         client.subscribe(acceptTopic);
+
+        // Construct Json
+        StaticJsonDocument<50> doc;
+        char output[50];
+
+        doc["id"] = getClientId();
+
+        // Serialise
+        serializeJson(doc, output);
+
+        sLogger.debug(output);
+        client.publish(acceptTopic, output);
     }
     else
     {

@@ -29,7 +29,11 @@ public:
 
 private:
     // Helper functions
-    float precision( float f, int places ) { float n = std::pow(10.0f, places ); return std::round(f * n) / n ; }
+    float precision( float f, int places )
+    {
+        float n = std::pow(10.0f, places );
+        return std::round(f * n) / n ;
+    }
 
     bool timeDone = false;
 
