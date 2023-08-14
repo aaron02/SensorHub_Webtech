@@ -118,8 +118,8 @@ void WifiManager::Update(uint64_t difftime)
         uint16_t sound = analogRead(PHOTOCELL_PIN);
 
         // Construct Json
-        StaticJsonDocument<100> doc;
-        char output[100];
+        StaticJsonDocument<255> doc;
+        char output[255];
 
         doc["temp"] = temperature;
         doc["pres"] = pressure;
@@ -127,6 +127,7 @@ void WifiManager::Update(uint64_t difftime)
         doc["hum"] = humidity;
         doc["lux"] = lux;
         doc["soun"] = sound;
+        doc["time"] = getTimeNow();
 
         // Serialise
         serializeJson(doc, output);
@@ -181,6 +182,7 @@ void WifiManager::reconnect()
         char output[50];
 
         doc["id"] = getClientId();
+
 
         // Serialise
         serializeJson(doc, output);
