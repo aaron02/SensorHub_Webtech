@@ -21,18 +21,6 @@ time_t getTimeNow()
     return now;
 }
 
-//Display Init
-rgb_lcd lcd;
-
-const int colorR = 255;
-const int colorG = 0;
-const int colorB = 0;
-
-//RGB
-int rgb_R = 13;
-int rgb_G = 15;
-int rgb_B = 12;
-
 //Temperatursensor
 BME280 bme280;
 
@@ -64,20 +52,6 @@ WifiManager::WifiManager()
     
     //Initial Lichtsensor
     TSL2561.init();
-
-    //Inital RGB
-    pinMode(rgb_R, OUTPUT);
-    pinMode(rgb_G, OUTPUT);
-    pinMode(rgb_B, OUTPUT);
-
-    digitalWrite(rgb_R, LOW);
-    digitalWrite(rgb_G, LOW);
-    digitalWrite(rgb_B, LOW);
-
-    //LCD Setup
-    lcd.begin(16, 2);
-    lcd.setRGB(colorR, colorG, colorB);
-    lcd.print("LCD Initialized");
 
     // Time Config
     configTime(TZ_Europe_Berlin, "pool.ntp.org");
@@ -165,9 +139,6 @@ std::string WifiManager::getClientId()
 void WifiManager::reconnect()
 {
     sLogger.debug("MQTT not connected... Trying to connect");
-
-    // Print our Node Id on the LCD
-    lcd.print(getClientId().c_str());
 
     // Attempt an Connection
     // Login als Clients User um nur Berechtigte Clients anmelden zu können
